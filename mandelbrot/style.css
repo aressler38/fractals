@@ -1,0 +1,43 @@
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background:white;
+}
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+}
+button {
+    top: 10px;
+    position: relative;
+    padding: 2px;
+    z-index: 3000;
+}
+#rect {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 2px solid red;
+    z-index: 2000;
+    cursor:hand;
+}
+#rect:active {
+    cursor:move;
+}
+#pacman {
+    position: absolute;
+    z-index: 1000;
+    background-image: url("pacman.gif");
+    -webkit-transform: scale(5,5);
+    -moz-transform: scale(5,5);
+    -ms-transform: scale(5,5);
+    top:40%;
+    left:40%;
+    width: 24px;
+    height: 24px;
+}
+

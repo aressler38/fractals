@@ -28,8 +28,8 @@ define(function() {
         var totalIterations = 0;
         const width = parseInt(config.width);
         const height = parseInt(config.height);
-        const X = Math.abs(config.x[0] - config.x[1]); // Length
-        const Y = Math.abs(config.y[0] - config.y[1]); // Length
+        const X = Math.abs(config.x[1] - config.x[0]); // Length
+        const Y = Math.abs(config.y[1] - config.y[0]); // Length
         const dx = X/width; 
         const dy = Y/height; 
         const xmin = Math.min.apply(this, config.x);
@@ -46,7 +46,7 @@ define(function() {
         for (i=0; i<height; i++) {          // for each row, 
             for (j=0; j<width; j++) {       // iterate over each column.
                 offset = 4*(i*width + j);   // byte offset
-                y0 = ymin + i*dy;
+                y0 = ymax - i*dy;
                 x0 = xmin + j*dx;
                 x  = 0.0;
                 y  = 0.0;
@@ -61,7 +61,6 @@ define(function() {
                 }
 
                 totalIterations += iteration;
-                //alpha = (iteration === MAX_ITERATION) ? 255 : 0;
                 bufferView.setUint32(offset, palette(iteration));
             }
         }
