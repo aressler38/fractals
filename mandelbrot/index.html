@@ -9,8 +9,10 @@
         }
         #canvas {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 0;
+            left: 0;
+            width: auto;
+            height: auto;
         }
     </style>
     <script src="../lib/require.js"></script>
@@ -20,62 +22,58 @@
                 var canvas = document.getElementById("canvas");
                 var context = canvas.getContext("2d");
                 var hw = new HardWorker({url:"../HardWorker/mainHardWorker.js"});
+                var now = function () { return window.performance.now(); };
+                var t = now();
 
                 hw.loadScript("lib/require.js", function() {
-                    hw.loadModule({path: "../mandelbrot/mandelbrot.js", trigger:"mandelbrot"}, getMandelbrot, main);
+                    hw.loadModule({
+                        path: "../mandelbrot/mandelbrot.js", 
+                        trigger:"mandelbrot"
+                    }, buildImage, main);
                 });
 
-                function init () {
-                    /*
-                    canvas.setAttribute("width", window.innerWidth);
-                    canvas.setAttribute("height", window.innerHeight);
-                    */
-                    canvas.setAttribute("width", 4);
-                    canvas.setAttribute("height", 2);
-                    //canvas.style.width = window.innerWidth;
-                    //canvas.style.height = window.innerHeight;
-                }
-
                 function main() {
-                    init();
+//                    getMandelbrot();
                     window.hw = hw;
-                    hw.trigger("mandelbrot");
                 }
 
-                function getMandelbrot(data) {
-                    buildBMP(data);
+                function getMandelbrot(width, height) {
+                    width = (width) ? width : 800;
+                    height = (height) ? height : 600;
+                    console.log("generating Mandelbrot!");
+                    t=now();
+                    canvas.setAttribute("width", width);
+                    canvas.setAttribute("height", height);
+                    hw.trigger("mandelbrot", {
+                        width: width,
+                        height: height
+                    });
                 }
 
-                function buildBMP(arrayBuffer) {
-                    var blob = new Blob([arrayBuffer] , {type: "image/bmp"});
-                    var bytes = new Uint8Array(arrayBuffer);
+                function buildImage(data) {
+                    var bytes = new Uint8Array(data.buffer);
                     var image = context.createImageData(canvas.width, canvas.height);
-                    var view = new DataView(arrayBuffer);
                     for (var i=0; i<bytes.length; i++) {
                         image.data[i] = bytes[i];
                     }
                     context.putImageData(image, 0, 0);
-                        
-                    var reader = new FileReader();
-
-                    reader.onload = function() {
-                        //canvas.setAttribute("src", reader.result);
-                    };
-                    reader.readAsDataURL(blob);
-                    
-                    window.reader = reader;
-                    window.view = view;
-                    window.blob = blob;
-                    console.log('built bmp');
+                    var deltaT = (now() - t) / 1000;
+                    console.log('built bit map in '+(deltaT).toFixed(2)+'s');
+                    console.log("Iteration Count: "+(data.iterations).toExponential());
+                    var calculations = 19*data.iterations;
+                    console.log("Number of calculations estimate: "+calculations.toExponential());
+                    console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
                 }
 
 
+                window.getMandelbrot = getMandelbrot;
             });
             
         });
     </script>
 </head>
 <body>
+    <button onclick="window.getMandelbrot();" style="z-index:100000;position:absolute;">draw</button>
     <canvas id="canvas"></canvas>
 </body>
 </html>
