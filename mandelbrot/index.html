@@ -14,11 +14,16 @@
             width: auto;
             height: auto;
         }
+        button {
+            position: relative;
+            padding: 1ex;
+            z-index: 1000;
+        }
     </style>
     <script src="../lib/require.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function(event) {
-            require(["../HardWorker/HardWorker"], function(HardWorker) {
+            require(["../HardWorker/HardWorker", "mandelbrot"], function(HardWorker, Mandelbrot) {
                 var canvas = document.getElementById("canvas");
                 var context = canvas.getContext("2d");
                 var hw = new HardWorker({url:"../HardWorker/mainHardWorker.js"});
@@ -65,15 +70,30 @@
                     console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
                 }
 
+                function getMandelbrotSlow(width, height) {
+                    width = (width) ? width : 800;
+                    height = (height) ? height : 600;
+                    console.log("generating Mandelbrot! (in main thread)");
+                    t=now();
+                    canvas.setAttribute("width", width);
+                    canvas.setAttribute("height", height);
+                    var data = Mandelbrot({
+                        width: width,
+                        height: height
+                    });
+                    buildImage(data);
+                }
 
                 window.getMandelbrot = getMandelbrot;
+                window.getMandelbrotSlow = getMandelbrotSlow;
             });
             
         });
     </script>
 </head>
 <body>
-    <button onclick="window.getMandelbrot();" style="z-index:100000;position:absolute;">draw</button>
+    <button onclick="window.getMandelbrot();">draw via HardWorker</button>
+    <button onclick="window.getMandelbrotSlow();">draw in Main Thread (Warning: Locks UI!)</button>
     <canvas id="canvas"></canvas>
 </body>
 </html>
