@@ -6,6 +6,8 @@
         body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            background:white;
         }
         #canvas {
             position: absolute;
@@ -15,9 +17,33 @@
             height: auto;
         }
         button {
+            top: 10px;
             position: relative;
-            padding: 1ex;
+            padding: 2px;
             z-index: 1000;
+        }
+        #rect {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 2px solid red;
+            z-index: 2000;
+            cursor:hand;
+        }
+        #rect:active {
+            cursor:move;
+        }
+        #pacman {
+            position: absolute;
+            z-index: 1000;
+            background-image: url("pacman.gif");
+            -webkit-transform: scale(5,5);
+            -moz-transform: scale(5,5);
+            -ms-transform: scale(5,5);
+            top:40%;
+            left:40%;
+            width: 24px;
+            height: 24px;
         }
     </style>
     <script src="../lib/require.js"></script>
@@ -29,7 +55,13 @@
                 var hw = new HardWorker({url:"../HardWorker/mainHardWorker.js"});
                 var now = function () { return window.performance.now(); };
                 var t = now();
-
+                var config = {
+                    x: [-2.5, 1.0],
+                    y: [-1.25, 1.25],
+                    width: 800,
+                    height: 600
+                };
+                
                 hw.loadScript("lib/require.js", function() {
                     hw.loadModule({
                         path: "../mandelbrot/mandelbrot.js", 
@@ -38,21 +70,51 @@
                 });
 
                 function main() {
-//                    getMandelbrot();
                     window.hw = hw;
+                    window.getMandelbrot();
+                    renderCanvas();
+                    pacman.style.display="none";
+                }
+
+                function renderCanvas() {
+                    canvas.setAttribute("width", config.width);
+                    canvas.setAttribute("height", config.height);
+                }
+
+                function getRectCoords() {
+                    var dims = {
+                        width: parseInt(rect.style.width),
+                        height: parseInt(rect.style.height),
+                        top: parseInt(rect.style.top),
+                        left: parseInt(rect.style.left)
+                    };
+                    var X = Math.abs(config.x[0] - config.x[1]);
+                    var Y = Math.abs(config.y[0] - config.y[1]);
+                    var dx = X/config.width;
+                    var dy = Y/config.height;
+                    dims.x = [config.x[0]+dims.left*dx, config.x[0]+(dims.left + dims.width)*dx];
+                    dims.y = [config.y[0]+dy*(config.height-(dims.top+dims.height)), config.y[1]-(dims.top)*dy];
+                    console.log(dims);
+                    return dims;
+                }
+
+                function setConfigFromRect() {
+                    console.log(config.x);
+                    var rectCoords = getRectCoords();
+                    config.x = rectCoords.x;
+                    config.y = rectCoords.y;
+                    console.log(config);
                 }
 
                 function getMandelbrot(width, height) {
-                    width = (width) ? width : 800;
-                    height = (height) ? height : 600;
-                    console.log("generating Mandelbrot!");
+                    console.log("generating Mandelbrot Set");
+                    pacman.style.display="block";
+                    config.width = (width) ? width : 400;
+                    config.height = (height) ? height : 300;
+                    canvas.setAttribute("width", config.width);
+                    canvas.setAttribute("height", config.height);
                     t=now();
-                    canvas.setAttribute("width", width);
-                    canvas.setAttribute("height", height);
-                    hw.trigger("mandelbrot", {
-                        width: width,
-                        height: height
-                    });
+                    hw.trigger("mandelbrot", config);
                 }
 
                 function buildImage(data) {
@@ -68,32 +130,124 @@
                     var calculations = 19*data.iterations;
                     console.log("Number of calculations estimate: "+calculations.toExponential());
                     console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
+                    console.log("\n\n");
+                    pacman.style.display="none";
+                    rect.reset();
                 }
 
                 function getMandelbrotSlow(width, height) {
-                    width = (width) ? width : 800;
-                    height = (height) ? height : 600;
+                    pacman.style.display="block";
+                    config.width = (width) ? width : 400;
+                    config.height = (height) ? height : 300;
                     console.log("generating Mandelbrot! (in main thread)");
-                    t=now();
-                    canvas.setAttribute("width", width);
-                    canvas.setAttribute("height", height);
-                    var data = Mandelbrot({
-                        width: width,
-                        height: height
-                    });
-                    buildImage(data);
+                    canvas.setAttribute("width", config.width);
+                    canvas.setAttribute("height", config.height);
+                    window.setTimeout(function() {
+                        t=now();
+                        var data = Mandelbrot(config);
+                        buildImage(data);
+                    },999);
                 }
 
                 window.getMandelbrot = getMandelbrot;
                 window.getMandelbrotSlow = getMandelbrotSlow;
+
+                var x0,y0;
+                var rect = document.createElement("div");
+                rect.id = "rect";
+                var style = null;
+                rect.onmousedown = function(event) {
+                    style = window.getComputedStyle(this);
+                    this.x0 = event.clientX - parseInt(style.left);
+                    this.y0 = event.clientY - parseInt(style.top);
+                    document.addEventListener("mousemove", dragRect);
+                };
+                rect.reset = function() {
+                    this.style.width = "0px";
+                    this.style.height = "0px";
+                    this.style.top = "0px";
+                    this.style.left = "0px";
+                };
+                rect.reset();
+                function dragRect(event) {
+                    rect.style.top = event.clientY - rect.y0 + "px";
+                    rect.style.left = event.clientX -rect.x0 + "px";
+                };
+                document.addEventListener("mouseup" , function(event) {
+                    document.removeEventListener("mousemove", dragRect);
+                });
+                document.body.appendChild(rect);
+                /** @callback */
+                function drawRect(event) {
+                    var x,y;
+                    x = event.pageX;
+                    y = event.pageY;
+                    rect.style.width = event.pageX - x0 + "px";
+                    rect.style.height = event.pageY - y0 + "px";
+                }
+                /** @callback */
+                function startRect(event) {
+                    x0 = event.pageX;
+                    y0 = event.pageY;
+                    rect.style.top = y0;
+                    rect.style.left = x0;
+                    rect.style.width=0;
+                    rect.style.height=0;
+                    rect.style.display="block";
+                    document.addEventListener("mousemove", drawRect);
+                }
+                /** @callback */
+                function stopRect(event) {
+                    document.removeEventListener("mousemove", drawRect);
+                    setConfigFromRect()
+                }
+                canvas.addEventListener("mousedown", startRect);
+                document.addEventListener("mouseup", stopRect);
+                canvas.onmousedown = startRect;
+
+                // POLYFILL FOR FF
+                var dragItems = document.querySelectorAll('[draggable=true]');
+                for (var i = 0; i < dragItems.length; i++) {
+                  dragItems[i].addEventListener('dragstart', function (event) {
+                    // store the ID of the element, and collect it on the drop later on
+                    event.dataTransfer.setData('Text', this.id);
+                  });
+                }
+
+
+
+
+
+                     
             });
             
         });
     </script>
+    <script>
+        function requestFullScreen() {
+            var el = document.body;
+            if (el.requestFullscreen) {
+              el.requestFullscreen();
+            } else if (el.msRequestFullscreen) {
+              el.msRequestFullscreen();
+            } else if (el.mozRequestFullScreen) {
+              el.mozRequestFullScreen();
+            } else if (el.webkitRequestFullscreen) {
+              el.webkitRequestFullscreen();
+            }
+        };
+    </script>
+
 </head>
 <body>
-    <button onclick="window.getMandelbrot();">draw via HardWorker</button>
-    <button onclick="window.getMandelbrotSlow();">draw in Main Thread (Warning: Locks UI!)</button>
-    <canvas id="canvas"></canvas>
+    <button onclick="window.getMandelbrot(800,600);">draw in HardWorker Thread</button>
+    <button onclick="window.getMandelbrotSlow(800,600);">draw in Main Thread (Warning: Locks UI!)</button>
+    <button id='fullscreen'>Full Screen</button>
+    <canvas id="canvas" width="400" height"300"></canvas>
+    <div id="pacman"></div>
+    <script>
+        var fullscreen = document.getElementById("fullscreen");
+        fullscreen.addEventListener("click", requestFullScreen);
+    </script>
 </body>
 </html>

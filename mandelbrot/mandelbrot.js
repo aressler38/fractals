@@ -5,7 +5,7 @@ define(function() {
      * @returns {ArrayBuffer} buffer This is a pixel array representing a
      *      32-bit image with dimensions (width x height).
      */
-    function Mandelbrot(userConfig) {
+    function mandelbrot(userConfig) {
         var config = {
             // cartesian coordinates for extrema
             x: [-2.5, 1.0],
@@ -69,9 +69,9 @@ define(function() {
         function palette (iteration) {
             var color ;
             color = (iteration === MAX_ITERATION) ? 0x000000ff : 
-                (iteration > 900) ? 0xf9f9f9ff : 
-                (iteration > 800) ? 0xf8f8f8ff :
-                (iteration > 700) ? 0xf7f7f7ff : 
+                (iteration > 900) ? 0x0000ffff : 
+                (iteration > 800) ? 0xf8f808ff :
+                (iteration > 700) ? 0xf7f707ff : 
                 (iteration > 600) ? 0xf6f6f6ff : 
                 (iteration > 500) ? 0xf5f5f5ff : 
                 (iteration > 400) ? 0xf4f4f4ff : 
@@ -84,7 +84,11 @@ define(function() {
                 (iteration > 20)  ? 0x505050ff : 
                 (iteration > 10)  ? 0x0222afff : 
                 (iteration > 9)   ? 0x002aafff : 
-                (iteration > 8)   ? 0x0030beff : 
+                (iteration > 8)   ? 0x00ffbeff : 
+                (iteration > 7)   ? 0x0030beff : 
+                (iteration > 5)   ? 0x0030beff : 
+                (iteration > 3)   ? 0x4af0beff : 
+                (iteration > 2)   ? 0x0000ffff : 
                 (iteration > 1)   ? 0xffffffff : 0xffffffff; 
             return 0xffffffff & color;
         }
@@ -93,5 +97,5 @@ define(function() {
     }
 
 
-    return Mandelbrot;
+    return mandelbrot;
 });
