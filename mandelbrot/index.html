@@ -1,0 +1,81 @@
+<!doctype html5>
+<html>
+<head>
+    <title>Mandelbrot Set</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #canvas {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+    </style>
+    <script src="../lib/require.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            require(["../HardWorker/HardWorker"], function(HardWorker) {
+                var canvas = document.getElementById("canvas");
+                var context = canvas.getContext("2d");
+                var hw = new HardWorker({url:"../HardWorker/mainHardWorker.js"});
+
+                hw.loadScript("lib/require.js", function() {
+                    hw.loadModule({path: "../mandelbrot/mandelbrot.js", trigger:"mandelbrot"}, getMandelbrot, main);
+                });
+
+                function init () {
+                    /*
+                    canvas.setAttribute("width", window.innerWidth);
+                    canvas.setAttribute("height", window.innerHeight);
+                    */
+                    canvas.setAttribute("width", 4);
+                    canvas.setAttribute("height", 2);
+                    //canvas.style.width = window.innerWidth;
+                    //canvas.style.height = window.innerHeight;
+                }
+
+                function main() {
+                    init();
+                    window.hw = hw;
+                    hw.trigger("mandelbrot");
+                }
+
+                function getMandelbrot(data) {
+                    buildBMP(data);
+                }
+
+                function buildBMP(arrayBuffer) {
+                    var blob = new Blob([arrayBuffer] , {type: "image/bmp"});
+                    var bytes = new Uint8Array(arrayBuffer);
+                    var image = context.createImageData(canvas.width, canvas.height);
+                    var view = new DataView(arrayBuffer);
+                    for (var i=0; i<bytes.length; i++) {
+                        image.data[i] = bytes[i];
+                    }
+                    context.putImageData(image, 0, 0);
+                        
+                    var reader = new FileReader();
+
+                    reader.onload = function() {
+                        //canvas.setAttribute("src", reader.result);
+                    };
+                    reader.readAsDataURL(blob);
+                    
+                    window.reader = reader;
+                    window.view = view;
+                    window.blob = blob;
+                    console.log('built bmp');
+                }
+
+
+            });
+            
+        });
+    </script>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+</html>
