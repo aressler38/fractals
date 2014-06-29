@@ -1,97 +1,97 @@
 define(function() {
 
     /**
-     * @constructor
+     * @param {Object} userConfig  
+     * @returns {ArrayBuffer} buffer This is a pixel array representing a
+     *      32-bit image with dimensions (width x height).
      */
     function Mandelbrot(userConfig) {
         var config = {
+            // cartesian coordinates for extrema
             x: [-2.5, 1.0],
-            y: [-1.0, 1.0],
-            xres: 800,
-            yres: 600
+            y: [-1.25, 1.25],
+            // pixel width x height
+            width: 800,
+            height: 600
+        }
+        for (var param in userConfig) {
+            config[param] = userConfig[param];
         }
 
         var buffer = null;
-        var bufferLength = null;
         var bufferView = null;
+        var i, j; // counters
+        var x, y, x0, y0; // computed coordinates
+        var xtemp;
+        var offset = 0; // keep track of the byte offset in the loops
+        var iteration = 0;
+        var totalIterations = 0;
+        const width = parseInt(config.width);
+        const height = parseInt(config.height);
+        const X = Math.abs(config.x[0] - config.x[1]); // Length
+        const Y = Math.abs(config.y[0] - config.y[1]); // Length
+        const dx = X/width; 
+        const dy = Y/height; 
+        const xmin = Math.min.apply(this, config.x);
+        const ymin = Math.min.apply(this, config.y);
+        const xmax = xmin + X;
+        const ymax = ymin + Y;
+        const bitmapSize = width * height * 4; // 32 bit img
+        const MAX_ITERATION = 1000;
 
-        var width = 4;
-        var height = 2;
-
-        var pixelArraySize = 32;
-        var dibSize = 108;  // Number of bytes in DIB header block (fixed);
-        var bmpSize = 122 + pixelArraySize;
-        var bmpOffset = 14 + dibSize;
-        var bitmapSize = width * height * 4; // 32 bit img
-
-        bufferLength = 14 + dibSize + bitmapSize;
-        buffer = new ArrayBuffer(pixelArraySize);
+        buffer = new ArrayBuffer(bitmapSize);
         bufferView = new DataView(buffer);
 
-        /*
-        // WRITE BMP HEADER
-        bufferView.setUint16(0x0, 0x424D     ); // "BM"
-        bufferView.setUint32(0x2, bmpSize    ); // size of file 
-        bufferView.setUint16(0x6, 0x0000     ); // app reserved...
-        bufferView.setUint16(0x8, 0x0000     ); // app reserved...
-        bufferView.setUint32(0xA, bmpOffset  );
+        // Write the pixel array
+        for (i=0; i<height; i++) {          // for each row, 
+            for (j=0; j<width; j++) {       // iterate over each column.
+                offset = 4*(i*width + j);   // byte offset
+                y0 = ymin + i*dy;
+                x0 = xmin + j*dx;
+                x  = 0.0;
+                y  = 0.0;
+                iteration = 0;
+                
+                while ( x*x + y*y < 4 && iteration < MAX_ITERATION ) 
+                {
+                    xtemp = x*x - y*y + x0;
+                    y = 2*x*y + y0;
+                    x = xtemp;
+                    iteration++;
+                }
 
-        // Write DIB HEADER
-        bufferView.setUint32(0xE,  dibSize  ); 
-        bufferView.setUint32(0x12, width); 
-        bufferView.setUint32(0x16, height); 
-        bufferView.setUint16(0x1A, 1); // number of color planes being used
-        bufferView.setUint16(0x1C, 32); // number of bits per pixel
-        bufferView.setUint32(0x1E, 3); // BI_BITFIELDS, no compression
-        bufferView.setUint32(0x22, bitmapSize); // Size of pixel array, bytes
-        bufferView.setUint32(0x26, 2835); // horizontal print resolution (72DPI)
-        bufferView.setUint32(0x2A, 2835); // horizontal print resolution (72DPI)
-        bufferView.setUint32(0x2E, 0); // Number of colors in palette
-        bufferView.setUint32(0x32, 0); // 0 := all colors are imported
-        bufferView.setUint32(0x36, 0x0000FF00); // RED chanel bit mask 
-        bufferView.setUint32(0x3A, 0x00FF0000); // GREEN chanel bit mask 
-        bufferView.setUint32(0x3E, 0xFF000000); // BLUE chanel bit mask 
-        bufferView.setUint32(0x42, 0x000000FF); // ALPHA chanel bit mask
-        bufferView.setUint32(0x46, 0x206E6957); // little endian "Win "
-        bufferView.setUint32(0x4A, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x4E, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x52, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x56, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x5A, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x5E, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x62, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x66, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x6A, 0x0); // CIEXYZTRIPLE, unused for "Win "
-        bufferView.setUint32(0x6E, 0x0); // 0 Red Gamma , unused for "Win "
-        bufferView.setUint32(0x72, 0x0); // 0 Green Gamma , unused for "Win "
-        bufferView.setUint32(0x76, 0x0); // 0 Blue Gamma , unused for "Win "
-        */
+                totalIterations += iteration;
+                //alpha = (iteration === MAX_ITERATION) ? 255 : 0;
+                bufferView.setUint32(offset, palette(iteration));
+            }
+        }
 
-        // Write Pixel Array (the bitmap image data)
-        /*
-        bufferView.setUint32(0x7A, 0xFF00007F);
-        bufferView.setUint32(0x7E, 0xFF00007F);
-        bufferView.setUint32(0x82, 0xFF00007F);
-        bufferView.setUint32(0x86, 0xFF00007F);
-
-        bufferView.setUint32(0x8A, 0xFF0000FF);
-        bufferView.setUint32(0x8E, 0xFF0000FF);
-        bufferView.setUint32(0x92, 0xFF0000FF);
-        bufferView.setUint32(0x96, 0xFFFF00FF);
-        */
-
-        bufferView.setUint32(0x00, 0x000000FF);
-        bufferView.setUint32(0x04, 0x000000FF);
-        bufferView.setUint32(0x08, 0x000000FF);
-        bufferView.setUint32(0x0C, 0x000000FF);
-
-        bufferView.setUint32(0x10, 0xFF0000FF);
-        bufferView.setUint32(0x14, 0xFF0000FF);
-        bufferView.setUint32(0x18, 0xFF0000FF);
-        bufferView.setUint32(0x1C, 0x0000FFFF);
+        function palette (iteration) {
+            var color ;
+            color = (iteration === MAX_ITERATION) ? 0x000000ff : 
+                (iteration > 900) ? 0xf9f9f9ff : 
+                (iteration > 800) ? 0xf8f8f8ff :
+                (iteration > 700) ? 0xf7f7f7ff : 
+                (iteration > 600) ? 0xf6f6f6ff : 
+                (iteration > 500) ? 0xf5f5f5ff : 
+                (iteration > 400) ? 0xf4f4f4ff : 
+                (iteration > 300) ? 0xf3f3f3ff : 
+                (iteration > 200) ? 0xf2f2f2ff : 
+                (iteration > 100) ? 0xf1f1f1ff : 
+                (iteration > 50)  ? 0xaeaeaeae : 
+                (iteration > 40)  ? 0xadadadff : 
+                (iteration > 30)  ? 0xa0a0a0ff : 
+                (iteration > 20)  ? 0x505050ff : 
+                (iteration > 10)  ? 0x0222afff : 
+                (iteration > 9)   ? 0x002aafff : 
+                (iteration > 8)   ? 0x0030beff : 
+                (iteration > 1)   ? 0xffffffff : 0xffffffff; 
+            return 0xffffffff & color;
+        }
         
-        return buffer;
+        return {buffer:buffer, iterations:totalIterations};
     }
+
 
     return Mandelbrot;
 });
