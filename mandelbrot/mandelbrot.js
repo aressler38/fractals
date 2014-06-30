@@ -75,8 +75,8 @@ define(function() {
                 (iteration > 500) ? 0xf5f5f5ff : 
                 (iteration > 400) ? 0xf4f4f4ff : 
                 (iteration > 300) ? 0xf3f3f3ff : 
-                (iteration > 200) ? 0xf2f2f2ff : 
-                (iteration > 100) ? 0xf1f1f1ff : 
+                (iteration > 200) ? 0xf10202ff : 
+                (iteration > 100) ? 0xf10101ff : 
                 (iteration > 50)  ? 0xaeaeaeae : 
                 (iteration > 40)  ? 0xadadadff : 
                 (iteration > 30)  ? 0xa0a0a0ff : 
@@ -85,8 +85,8 @@ define(function() {
                 (iteration > 9)   ? 0x002aafff : 
                 (iteration > 8)   ? 0x00ffbeff : 
                 (iteration > 7)   ? 0x0030beff : 
-                (iteration > 5)   ? 0x0030beff : 
-                (iteration > 3)   ? 0x4af0beff : 
+                (iteration > 5)   ? 0x0022aaff : 
+                (iteration > 3)   ? 0x0000bbff : 
                 (iteration > 2)   ? 0x0000ffff : 
                 (iteration > 1)   ? 0xffffffff : 0xffffffff; 
             return 0xffffffff & color;

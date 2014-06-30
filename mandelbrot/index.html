@@ -17,10 +17,18 @@
                     y: [-1.25, 1.25],
                     width: 800,
                     height: 600,
-                    scale: 1.0 
+                    scale: 1.0,
                 };
+                function reset() {
+                    config.x = [-2.5, 1.0];
+                    config.y = [-1.25, 1.25];
+                    config.width = 800;
+                    config.height = 600;
+                    config.scale = 1.0;
+                    rect.reset();
+                }
                 
-                //canvas.style.width = config.scale *100 + "%";
+                window.reset = reset;
                 hw.loadScript("lib/require.js", function() {
                     hw.loadModule({
                         path: "../mandelbrot/mandelbrot.js", 
@@ -32,7 +40,6 @@
                     window.hw = hw;
                     window.getMandelbrot();
                     renderCanvas();
-                    pacman.style.display="none";
                 }
 
                 function renderCanvas() {
@@ -49,11 +56,10 @@
                     };
                     var X = Math.abs(config.x[0] - config.x[1]);
                     var Y = Math.abs(config.y[0] - config.y[1]);
-                    var dx = X/(config.width * config.scale);
-                    var dy = Y/(config.height * config.scale);
+                    var dx = X/(config.width);
+                    var dy = Y/(config.height);
                     dims.x = [config.x[0]+dims.left*dx, config.x[0]+(dims.left + dims.width)*dx];
                     dims.y = [config.y[0]+dy*(config.height-(dims.top+dims.height)), config.y[1]-(dims.top)*dy];
-                    console.log(dims);
                     return dims;
                 }
 
@@ -81,29 +87,33 @@
                         image.data[i] = bytes[i];
                     }
                     context.putImageData(image, 0, 0);
-                    var deltaT = (now() - t) / 1000;
-                    console.log('built bit map in '+(deltaT).toFixed(2)+'s');
-                    console.log("Iteration Count: "+(data.iterations).toExponential());
-                    var calculations = 19*data.iterations;
-                    console.log("Number of calculations estimate: "+calculations.toExponential());
-                    console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
-                    console.log("\n\n");
+                    reportStats(data);
                     pacman.style.display="none";
                     rect.reset();
                 }
 
+                function reportStats(data) {
+                    var deltaT = (now() - t) / 1000;
+                    var calculations = 19*data.iterations;
+                    console.log('built bit map in '+(deltaT).toFixed(2)+'s');
+                    console.log("Iteration Count: "+(data.iterations).toExponential());
+                    console.log("Number of calculations estimate: "+calculations.toExponential());
+                    console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
+                    console.log("\n\n");
+                }
+
                 function getMandelbrotSlow(width, height) {
+                    console.log("generating Mandelbrot set (in main thread)");
                     pacman.style.display="block";
                     config.width = (width) ? width : config.width;
                     config.height = (height) ? height : config.height;
-                    console.log("generating Mandelbrot! (in main thread)");
                     canvas.setAttribute("width", config.width);
                     canvas.setAttribute("height", config.height);
                     window.setTimeout(function() {
                         t=now();
                         var data = Mandelbrot(config);
                         buildImage(data);
-                    },999);
+                    },200);
                 }
 
                 window.getMandelbrot = getMandelbrot;
@@ -174,12 +184,6 @@
                     event.dataTransfer.setData('Text', this.id);
                   });
                 }
-
-
-
-
-
-                     
             });
             
         });
@@ -204,11 +208,14 @@
     <button onclick="window.getMandelbrot(800,600);">draw in HardWorker Thread</button>
     <button onclick="window.getMandelbrotSlow(800,600);">draw in Main Thread (Warning: Locks UI!)</button>
     <button id='fullscreen'>Full Screen</button>
+    <button id='reset'>reset fractal</button>
     <canvas id="canvas" width="800" height"600"></canvas>
     <div id="pacman"></div>
     <script>
         var fullscreen = document.getElementById("fullscreen");
         fullscreen.addEventListener("click", requestFullScreen);
+        var resetFractal = document.getElementById("reset");
+        resetFractal.onclick = function() {reset(); getMandelbrot();};
     </script>
 </body>
 </html>
