@@ -89,7 +89,8 @@ int writePNG (mandelbrot& m) {
   png_write_info(png_ptr, png_info);
 
   // Allocate memory for one row (3 bytes per pixel - RGB)
-  png_bytep row = (png_bytep) malloc(3 * width * sizeof(png_byte));
+ // png_bytep row = (png_bytep) malloc(3 * width * sizeof(png_byte));
+  png_bytep row = new png_byte[3 * width * sizeof(png_byte)];
 
 
   // Write image data
@@ -112,8 +113,8 @@ int writePNG (mandelbrot& m) {
     fclose(fp);
   }
   if ( row ) { 
-    free(row);
-    //delete [] row; 
+    //free(row);
+    delete [] row;
   }
   if (png_info != NULL) png_free_data(png_ptr, png_info, PNG_FREE_ALL, -1);
   if (png_ptr != NULL) png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
