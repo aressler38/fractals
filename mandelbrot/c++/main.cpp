@@ -1,5 +1,5 @@
 /** \mainpage
- * 
+ *
  */
 
 #include "mandelbrot.h"
@@ -7,37 +7,81 @@
 #include <png.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctime>
 
 #define FRACTAL_FILE "fractal.png"
 
-/** 
+
+
+/**
  * Palette function
  */
-void setRGB(png_byte *ptr, double val) {
-  int v = (int)(val * 767);
-  if (v < 0) v = 0; // shouldn't happen
+void setRGB(png_byte *ptr, mandelbrot::img_datum data) {
+
+  int v = (int)(data.area * 767);
   if (v > 767) v = 767;
   int offset = v % 256;
-  if (v<256) {
-    ptr[0] = 0; 
-    ptr[1] = 0; 
-    ptr[2] = offset;
-  }
-  else if (v<512) {
-    ptr[0] = 0; 
-    ptr[1] = offset; 
-    ptr[2] = 255-offset;
-  }
-  else {
-    ptr[0] = offset; 
-    ptr[1] = 255-offset; 
+
+
+  if (data.iter == mandelbrot::MAX_ITER ) {
+    ptr[0] = 0;
+    ptr[1] = 0;
     ptr[2] = 0;
+  } else if (data.iter < 1 ) {
+    ptr[0] = 255;
+    ptr[1] = 0;
+    ptr[2] = 0;
+  } else if (data.iter < 2 ) {
+    ptr[0] = 0;
+    ptr[1] = 122;
+    ptr[2] = 0;
+  } else if (data.iter < 4 ) {
+    ptr[0] = 255;
+    ptr[1] = 255;
+    ptr[2] = 0;
+  } else if (data.iter < 8 ) {
+    ptr[0] = 120;
+    ptr[1] = 205;
+    ptr[2] = 0;
+  } else if (data.iter < 8 ) {
+    ptr[0] = 0;
+    ptr[1] = 255;
+    ptr[2] = 0;
+  } else if (data.iter < 16 ) {
+    ptr[0] = 0;
+    ptr[1] = 0;
+    ptr[2] = 255;
+  } else if (data.iter < 32 ) {
+    ptr[0] = 255;
+    ptr[1] = 255;
+    ptr[2] = 0;
+  } else if (data.iter < 64 ) {
+    ptr[0] = 155;
+    ptr[1] = 25;
+    ptr[2] = 93;
+  } else if (data.iter < 128 ) {
+    ptr[0] = 255;
+    ptr[1] = 255;
+    ptr[2] = 255;
+  } else if (data.iter < 167 ) {
+    ptr[0] = 0;
+    ptr[1] = 0;
+    ptr[2] = 0;
+  } else if (data.iter < 256 ) {
+    ptr[0] = 255;
+    ptr[1] = 0;
+    ptr[2] = 255;
+  } else {
+    ptr[0] = 105;
+    ptr[1] = 255;
+    ptr[2] = 255;
   }
+
 }
 
 int writePNG (mandelbrot& m) {
 
-  FILE *fp = fopen(FRACTAL_FILE, "wb"); 
+  FILE *fp = fopen(FRACTAL_FILE, "wb");
   if ( ! fp ) {
     return 1;
   }
@@ -70,7 +114,7 @@ int writePNG (mandelbrot& m) {
   unsigned height = m.get_pixel_height();
 
   // Write header (8 bit colour depth)
-  png_set_IHDR(png_ptr, png_info, width, height, 
+  png_set_IHDR(png_ptr, png_info, width, height,
     8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
     PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
@@ -108,11 +152,11 @@ int writePNG (mandelbrot& m) {
 
 
   // ============ CLEANUP ============
-  
+
   if ( fp ) {
     fclose(fp);
   }
-  if ( row ) { 
+  if ( row ) {
     //free(row);
     delete [] row;
   }
@@ -128,10 +172,14 @@ int main (int argc, char * argv[]) {
   using namespace std;
   cout << endl;
 
+  time_t timer;
+  time(&timer);
   mandelbrot m;
+  double total_seconds = difftime(time(NULL), timer);
+  cout << "IT TOOK " << total_seconds << " seconds\n";
 
   writePNG(m);
-  
+
 
   cout << endl;
   return 0;
