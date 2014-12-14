@@ -18,11 +18,6 @@
  */
 void setRGB(png_byte *ptr, mandelbrot::img_datum data) {
 
-  int v = (int)(data.area * 767);
-  if (v > 767) v = 767;
-  int offset = v % 256;
-
-
   if (data.iter == mandelbrot::MAX_ITER ) {
     ptr[0] = 0;
     ptr[1] = 0;
@@ -47,32 +42,52 @@ void setRGB(png_byte *ptr, mandelbrot::img_datum data) {
     ptr[0] = 0;
     ptr[1] = 255;
     ptr[2] = 0;
+  } else if (data.iter < 10 ) {
+    ptr[0] = 63;
+    ptr[1] = 63;
+    ptr[2] = 127;
+  } else if (data.iter < 12 ) {
+    ptr[0] = 0;
+    ptr[1] = 127;
+    ptr[2] = 127;
+  } else if (data.iter < 14 ) {
+    ptr[0] = 0;
+    ptr[1] = 255;
+    ptr[2] = 127;
   } else if (data.iter < 16 ) {
     ptr[0] = 0;
     ptr[1] = 0;
     ptr[2] = 255;
-  } else if (data.iter < 32 ) {
+  } else if (data.iter < 18 ) {
     ptr[0] = 255;
-    ptr[1] = 255;
+    ptr[1] = 127;
     ptr[2] = 0;
+  } else if (data.iter < 32 ) {
+    ptr[0] = 205;
+    ptr[1] = 255;
+    ptr[2] = 200;
   } else if (data.iter < 64 ) {
     ptr[0] = 155;
     ptr[1] = 25;
     ptr[2] = 93;
   } else if (data.iter < 128 ) {
-    ptr[0] = 255;
-    ptr[1] = 255;
-    ptr[2] = 255;
+    ptr[0] = 85;
+    ptr[1] = 25;
+    ptr[2] = 25;
   } else if (data.iter < 167 ) {
-    ptr[0] = 0;
+    ptr[0] = 255;
     ptr[1] = 0;
     ptr[2] = 0;
   } else if (data.iter < 256 ) {
     ptr[0] = 255;
     ptr[1] = 0;
     ptr[2] = 255;
+  } else if (data.iter < 512 ) {
+    ptr[0] = 0;
+    ptr[1] = 255;
+    ptr[2] = 255;
   } else {
-    ptr[0] = 105;
+    ptr[0] = 255;
     ptr[1] = 255;
     ptr[2] = 255;
   }
