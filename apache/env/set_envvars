@@ -1,0 +1,41 @@
+#!/bin/bash 
+
+# Run this before you run apachectl start
+# It appends the server environment variables to apache's envvars executable 
+
+# Make paths relative to fractals/apache/env
+cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+# CONFIGURATION VARIABLES 
+APACHE_ENVARS=$1
+TMP_FILE=/tmp/__APACHE_ENV_SETUP_TMP__
+FRACTALS_ROOT=$(cd ../../ && pwd -P)
+
+# ENVIRONMENT VARIABLES
+FRACTALS_WEB_ROOT="$FRACTALS_ROOT/mandelbrot/web"
+FRACTALS_SERVER_NAME="fractals.localhost"
+
+if [ "$APACHE_ENVARS" == "" ]; then 
+  APACHE_ENVARS="/usr/local/apache2/bin/envvars"
+fi
+
+if [ ! -e $APACHE_ENVARS ]; then
+  echo "i'm too lazy to find the apache envvars script, you gotta pass a cmd line param" 
+  exit 1
+fi
+
+# ERASE THE EXISTING CONFIG LINES
+perl -0777 -pe 's/#FRACTALS_CONFIG.*#END_FRACTALS_CONFIG//s' $APACHE_ENVARS > $TMP_FILE
+
+# WRITE THE CONFIG TO THE FILE
+echo -e "#FRACTALS_CONFIG\n"\
+"export FRACTALS_WEB_ROOT=\"$FRACTALS_WEB_ROOT\"\n"\
+"export FRACTALS_SERVER_NAME=\"$FRACTALS_SERVER_NAME\"\n"\
+"#END_FRACTALS_CONFIG" >> $TMP_FILE
+
+echo -e "\n\tThe Fractals Root dir is = $FRACTALS_ROOT\n"
+
+cat $APACHE_ENVARS > "$APACHE_ENVARS.bak"
+cat $TMP_FILE > $APACHE_ENVARS
+
+rm $TMP_FILE

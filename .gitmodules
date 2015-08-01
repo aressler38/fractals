@@ -1,3 +1,3 @@
 [submodule "HardWorker"]
-	path = HardWorker
+	path = mandelbrot/web/HardWorker
 	url = https://github.com/aressler38/HardWorker.git

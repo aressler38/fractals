@@ -6,10 +6,10 @@
     <script src="../lib/require.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function(event) {
-            require(["../HardWorker/HardWorker", "mandelbrot"], function(HardWorker, Mandelbrot) {
+            require(["HardWorker/HardWorker", "mandelbrot"], function(HardWorker, Mandelbrot) {
                 var canvas = document.getElementById("canvas");
                 var context = canvas.getContext("2d");
-                var hw = new HardWorker({url:"../HardWorker/mainHardWorker.js"});
+                var hw = new HardWorker({url:"HardWorker/mainHardWorker.js"});
                 var now = function () { return window.performance.now(); };
                 var t = now();
                 var config = {
@@ -19,6 +19,7 @@
                     height: 600,
                     scale: 1.0,
                 };
+
                 function reset() {
                     config.x = [-2.5, 1.0];
                     config.y = [-1.25, 1.25];
@@ -28,10 +29,9 @@
                     rect.reset();
                 }
                 
-                window.reset = reset;
                 hw.loadScript("lib/require.js", function() {
                     hw.loadModule({
-                        path: "../mandelbrot/mandelbrot.js", 
+                        path: "../mandelbrot.js", 
                         trigger:"mandelbrot"
                     }, buildImage, main);
                 });
@@ -47,6 +47,7 @@
                     canvas.setAttribute("height", config.height);
                 }
 
+                // TODO: REDO
                 function getRectCoords() {
                     var dims = {
                         width: parseInt(rect.style.width),
@@ -54,20 +55,24 @@
                         top: parseInt(rect.style.top),
                         left: parseInt(rect.style.left)
                     };
+                    var clientRect = rect.getBoundingClientRect();
+
                     var X = Math.abs(config.x[0] - config.x[1]);
                     var Y = Math.abs(config.y[0] - config.y[1]);
                     var dx = X/(config.width);
                     var dy = Y/(config.height);
                     dims.x = [config.x[0]+dims.left*dx, config.x[0]+(dims.left + dims.width)*dx];
                     dims.y = [config.y[0]+dy*(config.height-(dims.top+dims.height)), config.y[1]-(dims.top)*dy];
-                    return dims;
+
+                    console.debug(rect.getBoundingClientRect());
+                    return {
+                      x : dims.x,
+                      y : dims.y,
+                      width : clientRect.width,
+                      height : clientRect.height,
+                    }
                 }
 
-                function setConfigFromRect() {
-                    var rectCoords = getRectCoords();
-                    config.x = rectCoords.x;
-                    config.y = rectCoords.y;
-                }
 
                 function getMandelbrot(width, height) {
                     console.log("generating Mandelbrot Set");
@@ -94,9 +99,9 @@
 
                 function reportStats(data) {
                     var deltaT = (now() - t) / 1000;
-                    var calculations = 19*data.iterations;
-                    console.log('built bit map in '+(deltaT).toFixed(2)+'s');
-                    console.log("Iteration Count: "+(data.iterations).toExponential());
+                    var calculations = 19*data.iterations; // calcs per iteration * iteration counter
+                    console.log('built bit map in '+deltaT.toFixed(2)+'s');
+                    console.log("Iteration Count: "+data.iterations.toExponential());
                     console.log("Number of calculations estimate: "+calculations.toExponential());
                     console.log("calculations/second ratio: "+(calculations/deltaT).toExponential());
                     console.log("\n\n");
@@ -105,8 +110,8 @@
                 function getMandelbrotSlow(width, height) {
                     console.log("generating Mandelbrot set (in main thread)");
                     pacman.style.display="block";
-                    config.width = (width) ? width : config.width;
-                    config.height = (height) ? height : config.height;
+                    config.width = width || config.width;
+                    config.height = height || config.height;
                     canvas.setAttribute("width", config.width);
                     canvas.setAttribute("height", config.height);
                     window.setTimeout(function() {
@@ -116,6 +121,7 @@
                     },200);
                 }
 
+                window.reset = reset;
                 window.getMandelbrot = getMandelbrot;
                 window.getMandelbrotSlow = getMandelbrotSlow;
 
@@ -130,13 +136,13 @@
                     this.y0 = event.clientY - parseInt(style.top);
                     document.addEventListener("mousemove", dragRect);
                 };
+
                 rect.reset = function() {
-                    this.style.width = "0px";
-                    this.style.height = "0px";
-                    this.style.top = "0px";
-                    this.style.left = "0px";
+                    this.style.width = "";
+                    this.style.height = "";
+                    this.style.top = "";
+                    this.style.left = "";
                 };
-                rect.reset();
 
                 function dragRect(event) {
                     rect.style.top = event.clientY - rect.y0 + "px";
@@ -147,7 +153,10 @@
                     document.removeEventListener("mousemove", dragRect);
                 });
                 document.body.appendChild(rect);
-                /** @callback */
+
+                /** 
+                 * @callback 
+                 */
                 function drawRect(event) {
                     var x,y;
                     x = event.pageX;
@@ -155,35 +164,26 @@
                     rect.style.width = event.pageX - x0 + "px";
                     rect.style.height = event.pageY - y0 + "px";
                 }
-                /** @callback */
-                function startRect(event) {
+
+                function startDrag(event) {
                     x0 = event.pageX;
                     y0 = event.pageY;
                     rect.style.top = y0;
                     rect.style.left = x0;
                     rect.style.width=0;
                     rect.style.height=0;
-                    rect.style.display="block";
                     document.addEventListener("mousemove", drawRect);
                 }
-                /** @callback */
-                function stopRect(event) {
+                function stopDrag(event) {
+                    var rectCoords = getRectCoords();
+                    config.x = rectCoords.x;
+                    config.y = rectCoords.y;
                     document.removeEventListener("mousemove", drawRect);
-                    setConfigFromRect()
-                    console.log(config);
                 }
-                canvas.addEventListener("mousedown", startRect);
-                document.addEventListener("mouseup", stopRect);
-                canvas.onmousedown = startRect;
+                canvas.addEventListener("mousedown", startDrag);
+                document.addEventListener("mouseup", stopDrag);
+                //canvas.onmousedown = startToDrag;
 
-                // POLYFILL FOR FF
-                var dragItems = document.querySelectorAll('[draggable=true]');
-                for (var i = 0; i < dragItems.length; i++) {
-                  dragItems[i].addEventListener('dragstart', function (event) {
-                    // store the ID of the element, and collect it on the drop later on
-                    event.dataTransfer.setData('Text', this.id);
-                  });
-                }
             });
             
         });
@@ -211,6 +211,7 @@
     <button id='reset'>reset fractal</button>
     <canvas id="canvas" width="800" height"600"></canvas>
     <div id="pacman"></div>
+
     <script>
         var fullscreen = document.getElementById("fullscreen");
         fullscreen.addEventListener("click", requestFullScreen);
