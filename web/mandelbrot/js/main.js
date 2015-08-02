@@ -3,11 +3,11 @@ define([
   'mandelbrot'
 ], function (HardWorker, mandelbrot) {
 
-
   var rect, 
       hWorker,
       canvas, 
       context,
+      downloadAnchor,
       now = function () { return window.performance.now(); },
       t = now(),
       config = {
@@ -42,6 +42,9 @@ define([
 
   }
 
+  /**
+   * setup the event handlers for the selection rectangle and buttons
+   */
   function initUI () {
     var clientX0, clientY0, top0, left0;
     var fullscreenBtn = document.getElementById('fullscreen');
@@ -49,10 +52,13 @@ define([
     var drawFastBtn = document.getElementById('draw-fast');
     var drawSlowBtn = document.getElementById('draw-slow');
     var goBackBtn = document.getElementById('go-back');
+    var downloadBtn = document.getElementById('download');
+
 
     canvas = document.getElementById('canvas');
     context = canvas.getContext('2d');
     rect = document.getElementById('rect');
+    downloadAnchor = document.getElementById('download-anchor');
 
 
     function resizeRect (event) {
@@ -110,7 +116,27 @@ define([
     resetFractalBtn.onclick = function() {reset();getMandelbrot();};
     fullscreenBtn.addEventListener('click', requestFullScreen);
     goBackBtn.onclick = function () { goBack(); };
+    downloadBtn.onclick = downloadImage;
 
+  }
+
+  /**
+   * With the button element as a child of the anchor tag, 
+   * we capture the event first at the button, 
+   * create an array buffer, set the image data, create a blob url, 
+   * and lastly, set the href of the anchor tag. 
+   * The event bubbles to the anchor tag and causes a download.
+   */
+  function downloadImage () {
+    var data = canvas.toDataURL('image/png').split(',');
+    var bytes = atob( data[1] );
+    var buffer = new Uint8Array(bytes.length);
+    for ( var i=0; i<bytes.length; ++i ) {
+      buffer[i] = bytes.charCodeAt(i);
+    }
+    var blob = new Blob([buffer], { type : 'image/png' });
+    var objUrl = URL.createObjectURL(blob);
+    downloadAnchor.href = objUrl; 
   }
 
   function setRectConfig () { 
