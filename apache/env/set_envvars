@@ -12,7 +12,7 @@ TMP_FILE=/tmp/__APACHE_ENV_SETUP_TMP__
 FRACTALS_ROOT=$(cd ../../ && pwd -P)
 
 # ENVIRONMENT VARIABLES
-FRACTALS_WEB_ROOT="$FRACTALS_ROOT/mandelbrot/web"
+FRACTALS_WEB_ROOT="$FRACTALS_ROOT/web"
 FRACTALS_SERVER_NAME="fractals.localhost"
 
 if [ "$APACHE_ENVARS" == "" ]; then 
