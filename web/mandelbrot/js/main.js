@@ -29,7 +29,6 @@ define([
   function main () { 
     hWorker = new HardWorker({url:'/HardWorker/mainHardWorker.js'});
     hWorker.loadScript('lib/require.js', function() {
-      console.log("HERE");
       hWorker.loadModule({
         path: '/mandelbrot/js/mandelbrot.js', 
         trigger: 'mandelbrot'

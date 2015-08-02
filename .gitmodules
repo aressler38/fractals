@@ -1,3 +1,4 @@
 [submodule "web/HardWorker"]
 	path = web/HardWorker
 	url = https://github.com/aressler38/HardWorker.git
+  branch = master
