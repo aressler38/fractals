@@ -1,23 +1,23 @@
 define([
-	'/HardWorker/HardWorker.js', 
+	'/HardWorker/HardWorker.js',
 	'mandelbrot'
 ], function (HardWorker, mandelbrot) {
 
-	var rect, 
+	var rect,
 			hWorker,
-			canvas, 
+			canvas,
 			context,
 			downloadAnchor,
 			now = function () { return window.performance.now(); },
 			t = now(),
 			config = {
-				prev : { },
+				prev: {},
 				x: [-2.5, 1.0],
 				y: [-1.25, 1.25],
 				width: 800,
-				height: 600
+				height: 600,
+				heightWidthRatio: null,
 			};
-
 
 	if (!document.readyState.match(/interactive|complete|ready/)) {
 		document.addEventListener('DOMContentLoaded', main);
@@ -26,11 +26,11 @@ define([
 	}
 
 
-	function main () { 
+	function main () {
 		hWorker = new HardWorker({url:'/HardWorker/mainHardWorker.js'});
 		hWorker.loadScript('lib/require.js', function() {
 			hWorker.loadModule({
-				path: '/mandelbrot/js/mandelbrot.js', 
+				path: '/mandelbrot/js/mandelbrot.js',
 				trigger: 'mandelbrot'
 			}, buildImage, workerReady);
 		});
@@ -39,7 +39,6 @@ define([
 			initUI();
 			getMandelbrot();
 		}
-
 	}
 
 	/**
@@ -49,9 +48,11 @@ define([
 		var fullscreenBtn = document.getElementById('fullscreen'),
 			resetFractalBtn = document.getElementById('reset'),
 			drawFastBtn = document.getElementById('draw-fast'),
-			drawSlowBtn = document.getElementById('draw-slow'),
 			goBackBtn = document.getElementById('go-back'),
 			downloadBtn = document.getElementById('download'),
+			showBtn = document.getElementById('show'),
+			hideBtn = document.getElementById('hide'),
+			buttons = document.querySelector('.buttons'),
 			isMoving = false,
 			isResizing = false,
 			x0, y0,
@@ -62,16 +63,12 @@ define([
 		rect = document.getElementById('rect');
 		downloadAnchor = document.getElementById('download-anchor');
 
+		reset();
+
+		// Mouse bindings
 		rect.addEventListener('mousedown', function (event) {
-			var rectClientRect = rect.getBoundingClientRect();
-
-			x0 = event.pageX;
-			y0 = event.pageY;
-			top0 = rectClientRect.top;
-			left0 = rectClientRect.left;
-			isMoving = true;
+			return rectActiveStart(event.pageX, event.pageY);
 		});
-
 		canvas.addEventListener('mousedown', function (event) {
 			return startResizeDrag(event.clientX, event.clientY);
 		});
@@ -79,13 +76,28 @@ define([
 		rect.addEventListener('mousemove', mouseChangeRect);
 		document.addEventListener('mouseup' , stopChangeRect);
 
-		drawFastBtn.onclick = function() { 
+		// Touch bindings
+		rect.addEventListener('touchstart', function (event) {
+			var touch = event.touches[0];
+
+			return rectActiveStart(touch.pageX, touch.pageY);
+		});
+		canvas.addEventListener('touchstart', function (event) {
+			if (event.touches.length > 1) {
+				isResizing = true;
+			}
+			else {
+				isResizing = false;
+			}
+		});
+		canvas.addEventListener('touchmove', touchChangeRect);
+		rect.addEventListener('touchmove', touchChangeRect);
+		document.addEventListener('touchend' , stopChangeRect);
+
+		// Buttons
+		drawFastBtn.onclick = function() {
 			setRectConfig();
-			getMandelbrot(); 
-		};
-		drawSlowBtn.onclick = function() { 
-			setRectConfig();
-			getMandelbrotSlow();
+			getMandelbrot();
 		};
 		resetFractalBtn.onclick = function() {
 			reset();
@@ -94,26 +106,39 @@ define([
 		fullscreenBtn.addEventListener('click', requestFullScreen);
 		goBackBtn.onclick = function () { goBack(); };
 		downloadBtn.onclick = downloadImage;
-
-		function startResizeDrag (clientX, clientY) {
+		showBtn.onclick = function () {
+			buttons.classList.remove('hide');
+		};
+		hideBtn.onclick = function () {
+			buttons.classList.add('hide');
+		};
+		function rectActiveStart (x, y) {
 			var rectClientRect = rect.getBoundingClientRect();
 
-			console.debug('StartResizeDrag');
-			clientX0 = clientX;
-			clientY0 = clientY;
+			x0 = x;
+			y0 = y;
+			top0 = rectClientRect.top + window.scrollY;
+			left0 = rectClientRect.left + window.scrollX;
+			isMoving = true;
+		}
+
+		function startResizeDrag (x, y) {
+			var rectClientRect = rect.getBoundingClientRect();
+
+			clientX0 = x;
+			clientY0 = y;
 			rect.style.left = clientX0 + 'px';
 			rect.style.top = clientY0 + 'px';
 			rect.style.width = rect.style.height = 1;
-			config.heightWidthRatio = config.height / config.width; 
 			isResizing = true;
 		}
 
-		function changeRect (pageX, clientX, clientY) {
-			var width = pageX - clientX0;
+		function changeRect (x, y) {
+			var width = x - clientX0;
 
 			if (isMoving) {
-				rect.style.top = top0 + clientY - y0 + 'px';
-				rect.style.left = left0 + clientX - x0 + 'px';
+				rect.style.top = top0 + y - y0 + 'px';
+				rect.style.left = left0 + x - x0 + 'px';
 			}
 			else if (isResizing) {
 				rect.style.width = width + 'px';
@@ -121,25 +146,51 @@ define([
 			}
 		}
 
+		function touchChangeRect (event) {
+			var touch = event.touches[0],
+				left, right, width;
+
+			if (isResizing) {
+				left = event.touches[0];
+				right = event.touches[1];
+				if (left.pageX > right.pageX) {
+					left = event.touches[1];
+					right = event.touches[0];
+				}
+				rect.style.left = left.pageX + 'px';
+				rect.style.top = Math.min(left.pageY, right.pageY) + 'px';
+				width = right.pageX - left.pageX;
+				rect.style.width = width + 'px'; 
+				rect.style.height = width * config.heightWidthRatio + 'px';
+				event.stopPropagation();
+				event.preventDefault();
+				return;
+			}
+			if (event.touches.length > 1) {
+				isResizing = true;
+			}
+			changeRect(touch.pageX, touch.pageY);
+			if (isMoving) {
+				event.stopPropagation();
+				event.preventDefault();
+			}
+		}
+
 		function mouseChangeRect (event) {
-			changeRect(event.pageX, event.clientX, event.clientY);
+			changeRect(event.clientX, event.clientY);
 		}
 
 		function stopChangeRect () {
-			if (isMoving) {
-				isMoving = false;
-			}
-			if (isResizing) {
-				isResizing = false;
-			}
-		}	
+			isMoving = false;
+			isResizing = false;
+		}
 	}
 
 	/**
-	 * With the button element as a child of the anchor tag, 
-	 * we capture the event first at the button, 
-	 * create an array buffer, set the image data, create a blob url, 
-	 * and lastly, set the href of the anchor tag. 
+	 * With the button element as a child of the anchor tag,
+	 * we capture the event first at the button,
+	 * create an array buffer, set the image data, create a blob url,
+	 * and lastly, set the href of the anchor tag.
 	 * The event bubbles to the anchor tag and causes a download.
 	 */
 	function downloadImage () {
@@ -151,19 +202,19 @@ define([
 		}
 		var blob = new Blob([buffer], { type : 'image/png' });
 		var objUrl = URL.createObjectURL(blob);
-		downloadAnchor.href = objUrl; 
+		downloadAnchor.href = objUrl;
 	}
 
-	function setRectConfig () { 
+	function setRectConfig () {
 		var rectCoords = getRectCoords();
 		config.prev.x = config.x;
 		config.prev.y = config.y;
-		config.x = rectCoords.x; 
-		config.y = rectCoords.y; 
+		config.x = rectCoords.x;
+		config.y = rectCoords.y;
 	}
 
 	function goBack () {
-		config.x = config.prev.x; 
+		config.x = config.prev.x;
 		config.y = config.prev.y;
 		getMandelbrot();
 	}
@@ -171,8 +222,11 @@ define([
 	function reset() {
 		config.x = [-2.5, 1.0];
 		config.y = [-1.25, 1.25];
-		config.width = 800;
-		config.height = 600;
+		config.width = window.innerWidth;
+		config.height = window.innerHeight;
+		config.heightWidthRatio = config.height / config.width;
+		canvas.width = config.width;
+		canvas.height = config.height;
 	}
 
 	function getRectCoords() {
@@ -191,17 +245,15 @@ define([
 		y[0] = config.y[0] + yOff*dy ;
 		y[1] = y[0] + rectClientRect.height*dx ;
 
-
 		console.debug(config);
 		console.debug([x,y].map(function(coords) {
 			return coords.map(function(k){return k.toExponential(2);}).join(', ');
 		}).join('\t'));
-		
+
 		return {
 			x : x,
 			y : y
 		}
-
 	}
 
 	function buildImage(data) {
@@ -211,12 +263,12 @@ define([
 			image.data[i] = bytes[i];
 		}
 		context.putImageData(image, 0, 0);
-		reportStats(data);
 		pacman.style.display='none';
 	}
 
 	function requestFullScreen () {
 		var el = document.body;
+
 		if (el.requestFullscreen) {
 			el.requestFullscreen();
 		} else if (el.msRequestFullscreen) {
@@ -226,8 +278,10 @@ define([
 		} else if (el.webkitRequestFullscreen) {
 			el.webkitRequestFullscreen();
 		}
+		reset();
+		getMandelbrot();
 	}
-			 
+
 	function getMandelbrot () {
 		console.log('generating Mandelbrot Set');
 		pacman.style.display='block';
@@ -235,23 +289,4 @@ define([
 		hWorker.trigger('mandelbrot', config);
 	}
 
-
-	function getMandelbrotSlow () {
-		console.log('generating Mandelbrot set (in ui thread)');
-		pacman.style.display='block';
-		t=now();
-		var data = mandelbrot(config);
-		buildImage(data);
-	}
-
-	function reportStats (data) {
-		var deltaT = (now() - t) / 1000;
-		var calculations = 19*data.iterations; // calcs per iteration * iteration counter
-		console.log('built bit map in '+deltaT.toFixed(2)+'s');
-		console.log('Iteration Count: '+data.iterations.toExponential());
-		console.log('Number of calculations estimate: '+calculations.toExponential());
-		console.log('calculations/second ratio: '+(calculations/deltaT).toExponential());
-		console.log('\n\n');
-	}
-		
 });

@@ -14,11 +14,34 @@ body {
   -webkit-user-select: none;
   user-select: none;
 }
-button {
-  top: 10px;
-  position: relative;
-  padding: 2px;
+.buttons {
+	display: flex;
+	position: fixed;
+	top: 0;
+	left: 0;
   z-index: 3000;
+	transition: transform 1s;
+	transform: translate3d(0, 0, 0);
+}
+.buttons.hide {
+	transform: translate3d(-100%, 0, 0);
+}
+.buttons + #show {
+	display: none;
+  z-index: 3000;
+	padding: 4px 6px;
+}
+.buttons.hide + #show {
+	display: initial;
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+.buttons button {
+	flex: 1 1 auto;
+  position: relative;
+  padding: 5px;
+  z-index: 1;
 }
 #rect {
   position: absolute;
@@ -41,14 +64,12 @@ canvas:active {
   cursor:move;
 }
 #pacman {
-  position: absolute;
+  position: fixed;
   z-index: 1000;
-  background-image: url("pacman.gif");
-  -webkit-transform: scale(5,5);
-  -moz-transform: scale(5,5);
-  -ms-transform: scale(5,5);
-  top:40%;
-  left:40%;
+  background-image: url(pacman.gif);
+  top: 50%;
+  left: 50%;
+	transform: translate(-50%, -50%);
   width: 24px;
   height: 24px;
 }
