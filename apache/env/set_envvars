@@ -13,7 +13,7 @@ FRACTALS_ROOT=$(cd ../../ && pwd -P)
 
 # ENVIRONMENT VARIABLES
 FRACTALS_WEB_ROOT="$FRACTALS_ROOT/web"
-FRACTALS_SERVER_NAME="fractals.localhost"
+FRACTALS_SERVER_NAME="fractals.ressler.us"
 
 if [ "$APACHE_ENVARS" == "" ]; then 
   APACHE_ENVARS="/usr/local/apache2/bin/envvars"
