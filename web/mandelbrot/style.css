@@ -7,6 +7,7 @@ body {
 }
 #canvas {
   position: absolute;
+	color: inherit;
   top: 0;
   left: 0;
   width: auto;
@@ -19,6 +20,8 @@ body {
 	position: fixed;
 	top: 0;
 	left: 0;
+	width: 100%;
+	justify-content: space-between;
   z-index: 3000;
 	transition: transform 1s;
 	transform: translate3d(0, 0, 0);
@@ -29,7 +32,7 @@ body {
 .buttons + #show {
 	display: none;
   z-index: 3000;
-	padding: 4px 6px;
+	padding: 5px 6px;
 }
 .buttons.hide + #show {
 	display: initial;
@@ -38,7 +41,7 @@ body {
 	left: 0;
 }
 .buttons button {
-	flex: 1 1 auto;
+	flex: 0 1 auto;
   position: relative;
   padding: 5px;
   z-index: 1;

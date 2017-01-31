@@ -11,7 +11,10 @@ define([
 			now = function () { return window.performance.now(); },
 			t = now(),
 			config = {
-				prev: {},
+				prev: {
+					x: [],
+					y: [],
+				},
 				x: [-2.5, 1.0],
 				y: [-1.25, 1.25],
 				width: 800,
@@ -208,15 +211,17 @@ define([
 
 	function setRectConfig () {
 		var rectCoords = getRectCoords();
-		config.prev.x = config.x;
-		config.prev.y = config.y;
+		config.prev.x.push(config.x);
+		config.prev.y.push(config.y);
 		config.x = rectCoords.x;
 		config.y = rectCoords.y;
 	}
 
 	function goBack () {
-		config.x = config.prev.x;
-		config.y = config.prev.y;
+		if (config.prev.x.length) {
+			config.x = config.prev.x.pop();
+			config.y = config.prev.y.pop();
+		}
 		getMandelbrot();
 	}
 

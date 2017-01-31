@@ -73,10 +73,15 @@ define(function () {
 			// color is rgba => 0xrrggbbaa
       function palette (iteration) {
         var black = 0x000000ff,
-					color = ((iteration % 0xff) << 24) +
-						((iteration % 0x33) << 16) +
-						((iteration % 0x66) << 8) +
-						black;
+        	white = 0xffffffff,
+					max = 0xc83614ff,
+					n = new Uint32Array(1),
+					color = iteration === MAX_ITERATION ? max : (n[0] = 
+						((iteration/MAX_ITERATION * 0xff) << 0) << 24 | 
+						((iteration/MAX_ITERATION * 0xaa) << 0) << 16 | 
+						(((MAX_ITERATION-iteration)/MAX_ITERATION * 0x22) << 0) << 8 | 
+						black, n[0])
+						;
 
         return color;
       }
